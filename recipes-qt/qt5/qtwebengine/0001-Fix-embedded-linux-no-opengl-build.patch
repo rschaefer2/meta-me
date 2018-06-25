@@ -1,0 +1,46 @@
+From 2bb7406b71f56b63c1eff4d0f5b93605129beb0a Mon Sep 17 00:00:00 2001
+From: Ryan Schaefer <ryan.schaefer@flukenetworks.com>
+Date: Wed, 6 Jun 2018 17:06:27 -0700
+Subject: [PATCH] Fix embedded-linux -no-opengl build
+
+---
+ src/core/surface_factory_qt.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/surface_factory_qt.cpp b/src/core/surface_factory_qt.cpp
+index 9b47d74..ce2f48a 100644
+--- a/src/core/surface_factory_qt.cpp
++++ b/src/core/surface_factory_qt.cpp
+@@ -51,10 +51,12 @@
+ #if defined(USE_OZONE)
+ 
+ #include <EGL/egl.h>
+-#include <QOpenGLContext>
+ #include <dlfcn.h>
+ 
++#ifndef QT_NO_OPENGL
++#include <QOpenGLContext>
+ Q_GUI_EXPORT QOpenGLContext *qt_gl_global_share_context();
++#endif
+ 
+ namespace QtWebEngineCore {
+ 
+@@ -70,6 +72,7 @@ bool SurfaceFactoryQt::LoadEGLGLES2Bindings()
+             reinterpret_cast<gl::GLGetProcAddressProc>(
+                 base::GetFunctionPointerFromNativeLibrary(eglgles2Library,
+                                                           "eglGetProcAddress"));
++#ifndef QT_NO_OPENGL
+     if (!get_proc_address) {
+         // QTBUG-63341 most likely libgles2 not linked with libegl -> fallback to qpa
+         if (QOpenGLContext *context = qt_gl_global_share_context()) {
+@@ -77,6 +80,7 @@ bool SurfaceFactoryQt::LoadEGLGLES2Bindings()
+                 context->getProcAddress("eglGetProcAddress"));
+         }
+     }
++#endif
+ 
+     if (!get_proc_address) {
+         LOG(ERROR) << "eglGetProcAddress not found.";
+-- 
+2.7.4
+
